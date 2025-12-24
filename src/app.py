@@ -142,7 +142,7 @@ if st.button("MULAI ANALISIS SEKARANG"):
     with res_col2:
         if risk_percent < 15:
             st.success("🟢 **RISIKO RENDAH**\nJantung Anda terlihat sehat. Pertahankan!")
-        elif risk_percent < 45:
+        elif risk_percent < 30:
             st.warning("🟡 **RISIKO MENENGAH**\nPerhatikan gaya hidup Anda mulai sekarang.")
         else:
             st.error("🔴 **RISIKO TINGGI**\nSangat disarankan konsultasi dengan Dokter Spesialis Jantung.")
