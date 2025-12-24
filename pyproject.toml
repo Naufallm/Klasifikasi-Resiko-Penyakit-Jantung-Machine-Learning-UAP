@@ -1,0 +1,15 @@
+[project]
+name = "UAP-Machine-Learning"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "Kaitourae", email = "an4667112@gmail.com"},
+]
+dependencies = ["streamlit>=1.52.2", "pandas>=2.3.3", "numpy>=2.2.6", "torch>=2.7.1", "pytorch-tabnet>=4.1.0", "scikit-learn>=1.7.2", "joblib>=1.5.3"]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
