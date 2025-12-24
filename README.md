@@ -1,7 +1,8 @@
 # <h1 align="center">❤️ HEART DISEASE CLASSIFICATION ❤️</h1>
 
 <div align="center">
-  <img src="https://plus.unsplash.com/premium_photo-1661715878201-38e938923dfd?q=80&w=2070&auto=format&fit=crop" alt="Heart Disease Banner" width="600" style="border-radius: 10px;">
+  
+![Image](https://github.com/user-attachments/assets/f963b763-14ed-4678-a3d0-1a497670eefe)
   <p><i>Sistem deteksi dini kesehatan jantung berbasis Machine Learning.</i></p>
 </div>
 
