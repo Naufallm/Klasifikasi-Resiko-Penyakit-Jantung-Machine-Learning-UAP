@@ -130,7 +130,6 @@ if st.button("MULAI ANALISIS SEKARANG"):
             with torch.no_grad():
                 prob = torch.softmax(pt_style_model(X_tensor), dim=1)[0][1].item()
 
-    st.markdown('<div class="result-card">', unsafe_allow_html=True)
     st.write("### Hasil Analisis Risiko")
     
     res_col1, res_col2 = st.columns([1, 2])
