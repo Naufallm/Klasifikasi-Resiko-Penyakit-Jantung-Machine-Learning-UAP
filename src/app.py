@@ -6,146 +6,97 @@ import torch.nn as nn
 import joblib
 from pytorch_tabnet.tab_model import TabNetClassifier
 
-st.set_page_config(page_title="HeartHealth AI", layout="centered")
+st.set_page_config(page_title="HeartHealth AI Predictor", layout="wide")
 
 st.markdown("""
     <style>
-    .main { background-color: #0e1117; font-family: 'Segoe UI', sans-serif; }
-    .stButton>button { width: 100%; border-radius: 8px; height: 3.5em; background-color: #ff4b4b; font-weight: bold; border: none; color: white; }
-    .stSelectbox label, .stSlider label, .stNumberInput label { color: #ccd6f6 !important; font-weight: 500; }
-    .result-card { padding: 25px; border-radius: 15px; background-color: #1e2129; border: 1px solid #30363d; margin-top: 20px; }
+    .main { background-color: #0a192f; font-family: 'Segoe UI', sans-serif; color: #e6f1ff; }
+    [data-testid="stSidebar"] { background-color: #112240; border-right: 1px solid #233554; }
+    .stButton>button { width: 100%; border-radius: 10px; height: 3.5em; background: linear-gradient(90deg, #64ffda 0%, #48d1cc 100%); color: #0a192f; font-weight: bold; border: none; }
+    .result-card { padding: 30px; border-radius: 15px; background-color: #112240; border: 1px solid #233554; margin-top: 20px; }
+    .stSelectbox label, .stNumberInput label, .stSlider label { color: #8892b0 !important; font-size: 16px; }
+    h1, h2, h3 { color: #64ffda !important; }
     </style>
     """, unsafe_allow_html=True)
 
 class BaseMLP(nn.Module):
     def __init__(self, input_dim):
         super(BaseMLP, self).__init__()
-        self.model = nn.Sequential(
-            nn.Linear(input_dim, 64), nn.ReLU(), nn.Dropout(0.2),
-            nn.Linear(64, 32), nn.ReLU(), nn.Linear(32, 2)
-        )
-    def forward(self, x): return self.model(x)
+        self.net = nn.Sequential(nn.Linear(input_dim, 128), nn.ReLU(), nn.BatchNorm1d(128), nn.Dropout(0.3), nn.Linear(128, 64), nn.ReLU(), nn.Linear(64, 2))
+    def forward(self, x): return self.net(x)
 
 class PretrainedStyleNN(nn.Module):
     def __init__(self, input_dim):
         super(PretrainedStyleNN, self).__init__()
-        self.feature_extractor = nn.Sequential(
-            nn.Linear(input_dim, 128), nn.BatchNorm1d(128), nn.ReLU(),
-            nn.Linear(128, 64), nn.ReLU()
-        )
-        self.classifier = nn.Linear(64, 2)
-    def forward(self, x): return self.classifier(self.feature_extractor(x))
+        self.features = nn.Sequential(nn.Linear(input_dim, 256), nn.SiLU(), nn.Dropout(0.4), nn.Linear(256, 128), nn.SiLU())
+        self.head = nn.Linear(128, 2)
+    def forward(self, x): return self.head(self.features(x))
 
 @st.cache_resource
 def load_assets():
     scaler = joblib.load('src/models/scaler.pkl')
     feature_names = joblib.load('src/models/feature_names.pkl')
     encoders = joblib.load('src/models/label_encoders.pkl')
-    
     mlp = BaseMLP(len(feature_names))
     mlp.load_state_dict(torch.load('src/models/mlp_model.pth', map_location='cpu'))
     mlp.eval()
-    
     pt_style = PretrainedStyleNN(len(feature_names))
     pt_style.load_state_dict(torch.load('src/models/pt_style_model.pth', map_location='cpu'))
     pt_style.eval()
-    
     tabnet = TabNetClassifier()
     tabnet.load_model('src/models/tabnet_model.zip')
-    
     return scaler, feature_names, encoders, mlp, pt_style, tabnet
 
-try:
-    scaler, feature_names, encoders, mlp_model, pt_style_model, tabnet_model = load_assets()
-except Exception as e:
-    st.error(f"Asset Error: {e}. Pastikan Anda sudah menjalankan kode ekspor terbaru di Notebook.")
-    st.stop()
+scaler, feature_names, encoders, mlp_model, pt_style_model, tabnet_model = load_assets()
 
-st.title("❤️ Heart Attack Risk Analyzer")
-st.markdown("Analisis risiko serangan jantung menggunakan Artificial Intelligence.")
+with st.sidebar:
+    st.title("🛡️ Analysis Control")
+    model_choice = st.radio("Pilih Arsitektur Model:", ["Model 1: Base MLP", "Model 2: TabNet Pretrained", "Model 3: Style NN Pretrained"])
+    st.markdown("---")
+    st.caption("Aplikasi Prediksi Risiko Jantung")
+
+st.title("❤️ Heart Health AI Predictor")
+st.markdown("Analisis risiko berdasarkan data klinis dan profil kesehatan Anda.")
 
 input_user = {}
-
-st.subheader("📊 Profil Kesehatan")
-col1, col2 = st.columns(2)
-
-with col1:
-    input_user['Sex'] = st.selectbox("Jenis Kelamin", encoders['Sex'].classes_) if 'Sex' in encoders else st.selectbox("Jenis Kelamin", ["Male", "Female"])
-    input_user['AgeCategory'] = st.selectbox("Kategori Umur", encoders['AgeCategory'].classes_) if 'AgeCategory' in encoders else st.selectbox("Kategori Umur", ["Age 18 to 24", "Age 80 or older"])
-    input_user['GeneralHealth'] = st.selectbox("Kesehatan Umum", encoders['GeneralHealth'].classes_) if 'GeneralHealth' in encoders else st.selectbox("Kesehatan Umum", ["Excellent", "Good", "Poor"])
-    input_user['SmokerStatus'] = st.selectbox("Status Merokok", encoders['SmokerStatus'].classes_) if 'SmokerStatus' in encoders else st.selectbox("Status Merokok", ["Never smoked", "Smoker"])
-
-with col2:
-    height = st.number_input("Tinggi Badan (m)", 1.0, 2.5, 1.70)
-    weight = st.number_input("Berat Badan (kg)", 30.0, 200.0, 70.0)
-    input_user['HeightInMeters'] = height
-    input_user['WeightInKilograms'] = weight
-    input_user['BMI'] = weight / (height ** 2)
-    input_user['SleepHours'] = st.slider("Jam Tidur Harian", 1, 24, 7)
-    input_user['PhysicalActivities'] = st.selectbox("Aktif Berolahraga?", encoders['PhysicalActivities'].classes_) if 'PhysicalActivities' in encoders else st.selectbox("Olahraga?", ["Yes", "No"])
-
-st.subheader("🏥 Riwayat Medis")
-col3, col4 = st.columns(2)
-
-with col3:
-    input_user['HadDiabetes'] = st.selectbox("Diabetes?", encoders['HadDiabetes'].classes_) if 'HadDiabetes' in encoders else st.selectbox("Diabetes?", ["No", "Yes"])
-    input_user['HadStroke'] = st.selectbox("Pernah Stroke?", encoders['HadStroke'].classes_) if 'HadStroke' in encoders else st.selectbox("Stroke?", ["No", "Yes"])
-    input_user['HadAsthma'] = st.selectbox("Asma?", encoders['HadAsthma'].classes_) if 'HadAsthma' in encoders else st.selectbox("Asma?", ["No", "Yes"])
-
-with col4:
-    input_user['AlcoholDrinkers'] = st.selectbox("Peminum Alkohol?", encoders['AlcoholDrinkers'].classes_) if 'AlcoholDrinkers' in encoders else st.selectbox("Alkohol?", ["No", "Yes"])
-    input_user['PhysicalHealthDays'] = st.number_input("Hari Fisik Buruk (30 hari terakhir)", 0, 30, 0)
-    input_user['MentalHealthDays'] = st.number_input("Hari Mental Buruk (30 hari terakhir)", 0, 30, 0)
+with st.container():
+    col1, col2 = st.columns(2)
+    with col1:
+        input_user['GeneralHealth'] = st.selectbox("Kesehatan Umum", [c for c in encoders['GeneralHealth'].classes_ if str(c) != 'nan'])
+        input_user['Sex'] = st.selectbox("Jenis Kelamin", [c for c in encoders['Sex'].classes_ if str(c) != 'nan'])
+        input_user['AgeCategory'] = st.selectbox("Kategori Usia", [c for c in encoders['AgeCategory'].classes_ if str(c) != 'nan'])
+        input_user['SmokerStatus'] = st.selectbox("Status Merokok", [c for c in encoders['SmokerStatus'].classes_ if str(c) != 'nan'])
+        input_user['PhysicalActivities'] = st.selectbox("Aktif Berolahraga?", [c for c in encoders['PhysicalActivities'].classes_ if str(c) != 'nan'])
+    with col2:
+        input_user['HadStroke'] = st.selectbox("Pernah Mengalami Stroke?", [c for c in encoders['HadStroke'].classes_ if str(c) != 'nan'])
+        input_user['HadDiabetes'] = st.selectbox("Menderita Diabetes?", [c for c in encoders['HadDiabetes'].classes_ if str(c) != 'nan'])
+        input_user['AlcoholDrinkers'] = st.selectbox("Peminum Alkohol?", [c for c in encoders['AlcoholDrinkers'].classes_ if str(c) != 'nan'])
+        input_user['PhysicalHealthDays'] = st.slider("Hari Fisik Buruk (30 hari)", 0, 30, 0)
+        w = st.number_input("Berat (kg)", 20.0, 250.0, 70.0)
+        h = st.number_input("Tinggi (m)", 0.9, 2.5, 1.7)
+        input_user['BMI'], input_user['HeightInMeters'], input_user['WeightInKilograms'] = w/(h**2), h, w
+    st.markdown("</div>", unsafe_allow_html=True)
 
 for col in feature_names:
     if col not in input_user:
-        if col in encoders:
-            input_user[col] = encoders[col].classes_[0]
-        else:
-            input_user[col] = 0.0
+        if col in encoders: input_user[col] = [c for c in encoders[col].classes_ if str(c) != 'nan'][0]
+        else: input_user[col] = 7.0 if col == 'SleepHours' else 0.0
 
-st.markdown("---")
-selected_model = st.selectbox("Pilih Model AI:", ["Neural Network Base (MLP)", "TabNet (Pretrained)", "Pretrained Style NN"])
-
-if st.button("MULAI ANALISIS SEKARANG"):
+if st.button("MULAI ANALISIS KESEHATAN"):
     df_input = pd.DataFrame([input_user])[feature_names]
-    
     for col, le in encoders.items():
-        if col in df_input.columns:
-            try:
-                df_input[col] = le.transform(df_input[col].astype(str))
-            except:
-                df_input[col] = 0
-    
+        if col in df_input.columns: df_input[col] = le.transform(df_input[col].astype(str))
     X_scaled = scaler.transform(df_input)
     X_tensor = torch.tensor(X_scaled.astype(np.float32))
-
-    with st.spinner('AI sedang menganalisis data Anda...'):
-        if selected_model == "Neural Network Base (MLP)":
-            with torch.no_grad():
-                prob = torch.softmax(mlp_model(X_tensor), dim=1)[0][1].item()
-        elif selected_model == "TabNet (Pretrained)":
-            prob = tabnet_model.predict_proba(X_scaled)[0][1]
-        else:
-            with torch.no_grad():
-                prob = torch.softmax(pt_style_model(X_tensor), dim=1)[0][1].item()
-
-    st.write("### Hasil Analisis Risiko")
-    
+    with st.spinner('Analisis...'):
+        if "Model 1" in model_choice: prob = torch.softmax(mlp_model(X_tensor), 1)[0][1].item()
+        elif "Model 2" in model_choice: prob = tabnet_model.predict_proba(X_scaled)[0][1]
+        else: prob = torch.softmax(pt_style_model(X_tensor), 1)[0][1].item()
     res_col1, res_col2 = st.columns([1, 2])
-    risk_percent = prob * 100
-    
-    with res_col1:
-        st.metric("Skor Risiko", f"{risk_percent:.1f}%")
-    
+    risk = prob * 100
+    with res_col1: st.metric("Probability Score", f"{risk:.1f}%")
     with res_col2:
-        if risk_percent < 15:
-            st.success("🟢 **RISIKO RENDAH**\nJantung Anda terlihat sehat. Pertahankan!")
-        elif risk_percent < 30:
-            st.warning("🟡 **RISIKO MENENGAH**\nPerhatikan gaya hidup Anda mulai sekarang.")
-        else:
-            st.error("🔴 **RISIKO TINGGI**\nSangat disarankan konsultasi dengan Dokter Spesialis Jantung.")
-    
+        if risk < 35: st.success("### ✅ RISIKO RENDAH")
+        elif risk < 70: st.warning("### ⚠️ RISIKO MODERAT")
+        else: st.error("### 🚨 RISIKO TINGGI")
     st.markdown('</div>', unsafe_allow_html=True)
-
-st.caption("\n\n*Disclaimer: Aplikasi ini hanyalah tugas praktikum, bukan alat diagnosis medis resmi.*")
