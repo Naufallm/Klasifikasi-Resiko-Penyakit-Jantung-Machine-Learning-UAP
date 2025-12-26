@@ -69,9 +69,9 @@ Ringkasan performa akhir berdasarkan data uji (*test set*) menggunakan metrik kl
 
 | Arsitektur Model | Accuracy | Loss | Prec. | Rec. | F1 | Hasil Analisis |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **Model 1 (Base MLP)** | 78% | **0.4139** | 0.18 | 0.80 | 0.30 | **Medical Stability Focus.** Menunjukkan kestabilan dalam deteksi dasar dengan nilai error paling rendah secara keseluruhan. |
-| **Model 2 (TabNet)** | **83%** | 0.4191 | **0.21** | 0.76 | **0.33** | **General Precision Leader.** Unggul dalam akurasi dan presisi sistem, paling baik dalam meminimalisir kesalahan prediksi pada orang sehat. |
-| **Model 3 (FT-Transformer)** | 79% | 0.4264 | 0.19 | **0.81** | 0.30 | **Medical Safety Champion.** Mencapai Recall tertinggi, sangat krusial dalam menjaring pasien sakit secara maksimal. |
+| **Model 1 (Base MLP)** | 78% | **0.4139** | 0.18 | 0.80 | 0.30 | Menunjukkan kestabilan dalam deteksi dasar dengan nilai error paling rendah secara keseluruhan. |
+| **Model 2 (TabNet)** | **83%** | 0.4191 | **0.21** | 0.76 | **0.33** | Unggul dalam akurasi dan presisi sistem, paling baik dalam meminimalisir kesalahan prediksi pada orang sehat. |
+| **Model 3 (FT-Transformer)** | 79% | 0.4264 | 0.19 | **0.81** | 0.30 | Mencapai Recall tertinggi, sangat krusial dalam menjaring pasien sakit secara maksimal. |
 
 ---
 
