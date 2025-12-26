@@ -58,9 +58,9 @@ Visualisasi proses pembelajaran setiap model selama tahap pelatihan dan validasi
 ### 🧩 Confusion Matrix
 Evaluasi detail untuk melihat presisi prediksi pada tiap kelas:
 
-| Model 1: Base MLP | Model 2: TabNet | Model 3: pretrained embedding + Neural Network |
+| Model 1: Base MLP | Model 2: TabNet | Model 3: FT-Transformer |
 | :---: | :---: | :---: |
-| ![CM1](Media/confusion_matrix_MLP.png) | ![CM2](Media/confusion_matrix_Tabnet.png) | ![CM3](Media/confusion_matrix_Style_NN.png) |
+| ![CM1](Media/confusion_matrix_MLP.png) | ![CM2](Media/confusion_matrix_Tabnet.png) | ![CM3](Media/confusion_matrix_Style_FT.png) |
 
 ---
 
@@ -87,14 +87,7 @@ Dalam konteks klasifikasi penyakit jantung, **Model 3 (FT-Transformer)** diangga
 
 ---
 
-### 🧩 Confusion Matrix
-Evaluasi detail untuk melihat presisi prediksi pada tiap kelas:
 
-| Model 1: Base MLP | Model 2: TabNet | Model 3: FT-Transformer |
-| :---: | :---: | :---: |
-| ![CM1](Media/confusion_matrix_MLP.png) | ![CM2](Media/confusion_matrix_Tabnet.png) | ![CM3](Media/confusion_matrix_Style_FT.png) |
-
----
 
 ### 💻 Panduan Menjalankan Secara Lokal
 Ikuti langkah berikut untuk menjalankan sistem website di perangkat Anda:
