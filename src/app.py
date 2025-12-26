@@ -25,12 +25,27 @@ class BaseMLP(nn.Module):
         self.net = nn.Sequential(nn.Linear(input_dim, 128), nn.ReLU(), nn.BatchNorm1d(128), nn.Dropout(0.3), nn.Linear(128, 64), nn.ReLU(), nn.Linear(64, 2))
     def forward(self, x): return self.net(x)
 
-class PretrainedStyleNN(nn.Module):
-    def __init__(self, input_dim):
-        super(PretrainedStyleNN, self).__init__()
-        self.features = nn.Sequential(nn.Linear(input_dim, 256), nn.SiLU(), nn.Dropout(0.4), nn.Linear(256, 128), nn.SiLU())
-        self.head = nn.Linear(128, 2)
-    def forward(self, x): return self.head(self.features(x))
+class FTTransformer(nn.Module):
+    def __init__(self, input_dim, embed_dim=32, n_heads=4, n_layers=2):
+        super(FTTransformer, self).__init__()
+        self.tokenizer = nn.ModuleList([nn.Linear(1, embed_dim) for _ in range(input_dim)])
+        # Ubah dim_feedforward dari 64 menjadi 128 sesuai dengan hasil training Anda
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=embed_dim, 
+            nhead=n_heads, 
+            dim_feedforward=128, 
+            batch_first=True
+        )
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        self.head = nn.Linear(embed_dim, 2)
+    def forward(self, x):
+        tokens = [self.tokenizer[i](x[:, i].unsqueeze(-1)) for i in range(x.shape[1])]
+        x = torch.stack(tokens, dim=1)
+        cls_tokens = self.cls_token.expand(x.shape[0], -1, -1)
+        x = torch.cat((cls_tokens, x), dim=1)
+        x = self.transformer(x)
+        return self.head(x[:, 0])
 
 @st.cache_resource
 def load_assets():
@@ -40,18 +55,18 @@ def load_assets():
     mlp = BaseMLP(len(feature_names))
     mlp.load_state_dict(torch.load('src/models/mlp_model.pth', map_location='cpu'))
     mlp.eval()
-    pt_style = PretrainedStyleNN(len(feature_names))
-    pt_style.load_state_dict(torch.load('src/models/pt_style_model.pth', map_location='cpu'))
-    pt_style.eval()
+    ft_model = FTTransformer(len(feature_names))
+    ft_model.load_state_dict(torch.load('src/models/ft_transformer_model.pth', map_location='cpu'))
+    ft_model.eval()
     tabnet = TabNetClassifier()
     tabnet.load_model('src/models/tabnet_model.zip')
-    return scaler, feature_names, encoders, mlp, pt_style, tabnet
+    return scaler, feature_names, encoders, mlp, ft_model, tabnet
 
-scaler, feature_names, encoders, mlp_model, pt_style_model, tabnet_model = load_assets()
+scaler, feature_names, encoders, mlp_model, ft_model, tabnet_model = load_assets()
 
 with st.sidebar:
     st.title("🛡️ Analysis Control")
-    model_choice = st.radio("Pilih Arsitektur Model:", ["Model 1: Base MLP", "Model 2: TabNet Pretrained", "Model 3: Style NN Pretrained"])
+    model_choice = st.radio("Pilih Arsitektur Model:", ["Model 1: Base MLP", "Model 2: TabNet Pretrained", "Model 3: FT-Transformer"])
     st.markdown("---")
     st.caption("Aplikasi Prediksi Risiko Jantung")
 
@@ -75,7 +90,6 @@ with st.container():
         w = st.number_input("Berat (kg)", 20.0, 250.0, 70.0)
         h = st.number_input("Tinggi (m)", 0.9, 2.5, 1.7)
         input_user['BMI'], input_user['HeightInMeters'], input_user['WeightInKilograms'] = w/(h**2), h, w
-    st.markdown("</div>", unsafe_allow_html=True)
 
 for col in feature_names:
     if col not in input_user:
@@ -91,7 +105,8 @@ if st.button("MULAI ANALISIS KESEHATAN"):
     with st.spinner('Analisis...'):
         if "Model 1" in model_choice: prob = torch.softmax(mlp_model(X_tensor), 1)[0][1].item()
         elif "Model 2" in model_choice: prob = tabnet_model.predict_proba(X_scaled)[0][1]
-        else: prob = torch.softmax(pt_style_model(X_tensor), 1)[0][1].item()
+        else: prob = torch.softmax(ft_model(X_tensor), 1)[0][1].item()
+    st.markdown('<div class="result-card">', unsafe_allow_html=True)
     res_col1, res_col2 = st.columns([1, 2])
     risk = prob * 100
     with res_col1: st.metric("Probability Score", f"{risk:.1f}%")

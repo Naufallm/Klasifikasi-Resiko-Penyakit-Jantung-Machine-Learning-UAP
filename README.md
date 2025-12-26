@@ -31,8 +31,8 @@ Terdapat tiga model berbeda yang diimplementasikan dalam proyek ini:
    Arsitektur *Feedforward Neural Network* murni yang dibangun dari awal dengan optimasi *Class Weights* untuk menangani ketidakseimbangan data.
 2. **Model 2: TabNet - Pretrained (Transfer Learning 1)**
    Arsitektur *attention-based* khusus data tabular yang menggunakan *Self-Supervised Pretraining* untuk menangkap pola fitur secara otomatis sebelum tahap klasifikasi.
-3. **Model 3: Style NN - Pretrained (Transfer Learning 2)**
-   Model berbasis ekstraksi fitur mendalam (Feature Extractor) dengan arsitektur yang dioptimalkan untuk performa stabil pada klasifikasi biner medis.
+3. **Model 3: FT-Transformer - Pretrained (Transfer Learning 2)**
+   Model canggih berbasis *Feature Tokenizer Transformer*. Menggunakan mekanisme *Multi-head Attention* untuk mempelajari interaksi kompleks antar fitur medis secara paralel.
 
 ---
 
@@ -51,7 +51,7 @@ Visualisasi proses pembelajaran setiap model selama tahap pelatihan dan validasi
 
 | Grafik Performa Model 1 | Grafik Performa Model 2 | Grafik Performa Model 3 |
 | :---: | :---: | :---: |
-| ![LossAcc1](Media/accuracy_MLP.png) | ![LossAcc2](Media/accuracy_Tabnet.png) | ![LossAcc3](Media/accuracy_NN.png) |
+| ![LossAcc1](Media/accuracy_MLP.png) | ![LossAcc2](Media/accuracy_Tabnet.png) | ![LossAcc3](Media/accuracy_FT.png) |
 
 ---
 
@@ -60,28 +60,30 @@ Ringkasan performa akhir berdasarkan data uji (*test set*) menggunakan metrik kl
 
 | Arsitektur Model | Accuracy | Loss | Prec. | Rec. | F1 | Hasil Analisis |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **Model 1 (Base MLP)** | 78% | **0.4139** | 0.18 | **0.80** | 0.30 | **Medical Safety Focus.** Memiliki Recall tertinggi, sangat krusial untuk menjaring pasien sakit agar tidak terlewat (False Negative rendah). |
+| **Model 1 (Base MLP)** | 78% | **0.4139** | 0.18 | 0.80 | 0.30 | **Medical Stability Focus.** Menunjukkan kestabilan dalam deteksi dasar dengan nilai error paling rendah secara keseluruhan. |
 | **Model 2 (TabNet)** | **83%** | 0.4191 | **0.21** | 0.76 | **0.33** | **General Precision Leader.** Unggul dalam akurasi dan presisi sistem, paling baik dalam meminimalisir kesalahan prediksi pada orang sehat. |
-| **Model 3 (Style NN)** | 80% | 0.4231 | 0.19 | 0.78 | 0.31 | **Stable Performance.** Menunjukkan performa yang seimbang antara kemampuan deteksi (Recall) dan akurasi sistem secara keseluruhan. |
+| **Model 3 (FT-Transformer)** | 79% | 0.4264 | 0.19 | **0.81** | 0.30 | **Medical Safety Champion.** Mencapai Recall tertinggi, sangat krusial dalam menjaring pasien sakit secara maksimal. |
+
 ---
+
 ### 🔍 Analisis Perbandingan & Kesimpulan
 Setiap arsitektur model menunjukkan karakteristik performa yang berbeda sesuai dengan metode pendekatannya terhadap data medis:
 
-*   **Model 1 (Base MLP):** Menitikberatkan pada aspek **Medical Safety** dengan nilai **Recall tertinggi (0.80)** dan **Loss terendah (0.4139)**. Kemampuannya dalam menekan angka *False Negative* sangat krusial dalam dunia medis agar pasien yang benar-benar sakit tidak terlewat saat diagnosis awal.
-*   **Model 2 (TabNet):** Unggul sebagai model yang paling **Presisi dan Akurat (83% Acc)**. Berkat mekanisme *attention*, model ini paling cerdas dalam mengenali profil fitur tabular secara mendalam, sehingga sangat baik dalam meminimalisir kesalahan prediksi pada individu yang sehat (*False Positive*).
-*   **Model 3 (Style NN):** Memberikan performa yang **Stabil dan Seimbang**. Model ini merupakan "jalan tengah" yang solid, menawarkan tingkat akurasi dan kemampuan deteksi yang konsisten, menjadikannya model yang paling reliabel untuk generalisasi data di berbagai kondisi.
+*   **Model 1 (Base MLP):** Menitikberatkan pada aspek efisiensi dengan **Loss terendah (0.4139)**. Memberikan kepastian probabilitas yang stabil untuk screening awal pasien.
+*   **Model 2 (TabNet):** Unggul sebagai model yang paling **Presisi dan Akurat (83% Acc)**. Berkat mekanisme *attention*, model ini paling cerdas dalam mengenali profil fitur tabular secara mendalam.
+*   **Model 3 (FT-Transformer):** Menjadi model paling aman secara medis dengan **Recall tertinggi (0.81)**. Kemampuan *Attention Mechanism* pada arsitektur Transformer terbukti sangat efektif dalam mendeteksi pasien yang benar-benar memiliki riwayat serangan jantung (*True Positive*).
 
 **Kesimpulan Akhir:**
-Pemilihan model terbaik bergantung pada prioritas klinis. Dalam konteks klasifikasi penyakit jantung, **Model 1** dianggap paling optimal karena sensitivitasnya yang tinggi (Recall) dalam menjaring pasien berisiko, sementara **Model 2** menjadi pilihan terbaik jika tujuannya adalah efisiensi sistem dengan tingkat akurasi tertinggi.
+Dalam konteks klasifikasi penyakit jantung, **Model 3 (FT-Transformer)** dianggap paling optimal untuk diagnosa awal karena sensitivitasnya yang sangat tinggi (Recall). Namun, **Model 2** tetap menjadi pilihan terbaik jika tujuannya adalah akurasi sistem secara menyeluruh.
 
 ---
 
 ### 🧩 Confusion Matrix
 Evaluasi detail untuk melihat presisi prediksi pada tiap kelas:
 
-| Model 1: Base MLP | Model 2: TabNet | Model 3: Style NN |
+| Model 1: Base MLP | Model 2: TabNet | Model 3: FT-Transformer |
 | :---: | :---: | :---: |
-| ![CM1](Media/confusion_matrix_MLP.png) | ![CM2](Media/confusion_matrix_Tabnet.png) | ![CM3](Media/confusion_matrix_Style_NN.png) |
+| ![CM1](Media/confusion_matrix_MLP.png) | ![CM2](Media/confusion_matrix_Tabnet.png) | ![CM3](Media/confusion_matrix_Style_FT.png) |
 
 ---
 
@@ -121,5 +123,5 @@ Ikuti langkah berikut untuk menjalankan sistem website di perangkat Anda:
 
 ### 🔗 Live Demo
 Coba aplikasi deteksi jantung secara langsung di sini:  
-🚀 **[Klasifikasi Risiko Penyakit Jantung App](https://klasifikasi-resiko-penyakit-jantung.streamlit.app/)**
+**[Klasifikasi Risiko Penyakit Jantung App](https://klasifikasi-resiko-penyakit-jantung.streamlit.app/)**
 
