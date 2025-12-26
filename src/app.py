@@ -106,7 +106,6 @@ if st.button("MULAI ANALISIS KESEHATAN"):
         if "Model 1" in model_choice: prob = torch.softmax(mlp_model(X_tensor), 1)[0][1].item()
         elif "Model 2" in model_choice: prob = tabnet_model.predict_proba(X_scaled)[0][1]
         else: prob = torch.softmax(ft_model(X_tensor), 1)[0][1].item()
-    st.markdown('<div class="result-card">', unsafe_allow_html=True)
     res_col1, res_col2 = st.columns([1, 2])
     risk = prob * 100
     with res_col1: st.metric("Probability Score", f"{risk:.1f}%")
